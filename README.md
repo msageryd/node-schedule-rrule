@@ -10,7 +10,7 @@
 
 # Node Schedule RRule
 
-This is an RRule version of Matt Patenaude's node-schedule.
+This is an RRule version of Matt Patenaude's [node-schedule](https://github.com/node-schedule/node-schedule) (now maintained by Tejas Manohar).
 
 The very nice core of Matt's library is kept in order to handle many scheduled jobs with only one timer.
 
