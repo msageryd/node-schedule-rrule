@@ -4,9 +4,10 @@
 
 - [ ] Update test suite to comply with RRule instead of cron
 - [x] Update the documentation
-- [ ] Schedule jobs via object literal
+- [x] Schedule jobs via object literal and RRule/RRuleSet
 - [ ] Support for RRuleSet
 - [ ] Performance testing/optimizing
+- [ ] Ensure that timezones are handled correctly by RRule (we might need rrule-tz)
 
 # Node Schedule RRule
 
