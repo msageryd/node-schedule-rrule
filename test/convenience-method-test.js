@@ -3,13 +3,12 @@
 var sinon = require('sinon');
 var main = require('../package.json').main;
 var schedule = require('../' + main);
-
+var {RRule} = require('rrule');
 var clock;
 
-const RR_EVERY_SECOND = 'DTSTART;TZID=America/Adak:20200803T190600;RRULE:FREQ=SECONDLY;WKST=MO';
-const RR_EVERY_MINUTE = 'DTSTART;TZID=America/Adak:20200803T190600;RRULE:FREQ=MINUTELY;WKST=MO';
-const RR_UNTIL_1960 =
-  'DTSTART;TZID=America/Adak:19600803T190600;RRULE:FREQ=SECONDLY;UNTIL=19600803T190700;WKST=MO';
+const RR_EVERY_SECOND = 'DTSTART:19700101T000000\nRRULE:FREQ=SECONDLY;WKST=MO';
+const RR_EVERY_MINUTE = 'DTSTART:19700101T000000\nRRULE:FREQ=MINUTELY;WKST=MO';
+const RR_UNTIL_1960 = 'DTSTART:19600803T190600\nRRULE:FREQ=SECONDLY;UNTIL=19600803T190700;WKST=MO';
 
 module.exports = {
   setUp: function(cb) {
@@ -72,12 +71,7 @@ module.exports = {
     'Runs job at interval based on recur rule, repeating indefinitely': function(test) {
       test.expect(3);
 
-      var rule = new schedule.RecurrenceRule(RR_EVERY_SECOND);
-      console.log('***************');
-      console.log(typeof rule);
-      // rule.second = null; // fire every second
-
-      var job = schedule.scheduleJob(rule, function() {
+      var job = schedule.scheduleJob(RR_EVERY_SECOND, function() {
         test.ok(true);
       });
 
@@ -94,10 +88,7 @@ module.exports = {
        */
       test.expect(3);
 
-      var rule = new schedule.RecurrenceRule(RR_EVERY_SECOND);
-      //      rule.second = null; // fire every second
-
-      var job = new schedule.scheduleJob(rule, function() {});
+      var job = new schedule.scheduleJob(RR_EVERY_SECOND, function() {});
 
       job.on('scheduled', function(runOnDate) {
         test.ok(true);
@@ -112,10 +103,8 @@ module.exports = {
     },
     "Doesn't invoke job if recur rule schedules it in the past": function(test) {
       test.expect(1);
-      var rule = new schedule.RecurrenceRule(RR_UNTIL_1960);
-      //      rule.year = 1960;
 
-      var job = schedule.scheduleJob(rule, function() {
+      var job = schedule.scheduleJob(RR_UNTIL_1960, function() {
         test.ok(false);
       });
 
@@ -134,7 +123,7 @@ module.exports = {
 
       var job = new schedule.scheduleJob(
         {
-          second: null, // Fire every second
+          freq: RRule.SECONDLY,
         },
         function() {
           test.ok(true);
@@ -159,7 +148,7 @@ module.exports = {
 
       var job = schedule.scheduleJob(
         {
-          second: null, // fire every second
+          freq: RRule.SECONDLY,
         },
         function() {}
       );
@@ -180,7 +169,8 @@ module.exports = {
 
       var job = schedule.scheduleJob(
         {
-          year: 1960,
+          until: new Date('1960-01-01'),
+          freq: RRule.SECONDLY,
         },
         function() {
           test.ok(false);
@@ -196,35 +186,36 @@ module.exports = {
       clock.tick(1000);
     },
   },
-  '.scheduleJob({...}, {...}, fn)': {
-    'Callback called for each job if callback is provided': function(test) {
-      test.expect(3);
 
-      var job = new schedule.scheduleJob(
-        {
-          second: null, // Fire every second
-        },
-        function() {},
-        function() {
-          test.ok(true);
-        }
-      );
+  // '.scheduleJob({...}, {...}, fn)': {
+  //   'Callback called for each job if callback is provided': function(test) {
+  //     test.expect(3);
 
-      setTimeout(function() {
-        job.cancel();
-        test.done();
-      }, 3250);
+  //     var job = new schedule.scheduleJob(
+  //       {
+  //         second: null, // Fire every second
+  //       },
+  //       function() {},
+  //       function() {
+  //         test.ok(true);
+  //       }
+  //     );
 
-      clock.tick(3250);
-    },
-  },
+  //     setTimeout(function() {
+  //       job.cancel();
+  //       test.done();
+  //     }, 3250);
+
+  //     clock.tick(3250);
+  //   },
+  // },
   '.rescheduleJob(job, {...})': {
     'Reschedule jobs from object based to object based': function(test) {
       test.expect(3);
 
       var job = new schedule.scheduleJob(
         {
-          second: null,
+          freq: RRule.SECONDLY,
         },
         function() {
           test.ok(true);
@@ -233,7 +224,7 @@ module.exports = {
 
       setTimeout(function() {
         schedule.rescheduleJob(job, {
-          minute: null,
+          freq: RRule.SECONDLY,
         });
       }, 3250);
 
