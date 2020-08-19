@@ -2,7 +2,7 @@
 
 ## 0.9.2
 
-- More input options for Job.schedule (RRule object, RRupe options object, iCal string)
+- More input options for Job.schedule (RRule object, RRule options object, iCal string)
 
 - Refactoring. "Classes" moved to separate modules
 
