@@ -4,6 +4,11 @@ var sinon = require('sinon');
 var main = require('../package.json').main;
 var schedule = require('../' + main);
 
+const {RRule} = require('rrule');
+const RR_EVERY_SECOND = 'DTSTART:19700101T000000\nRRULE:FREQ=SECONDLY;WKST=MO';
+const RR_EVERY_MINUTE = 'DTSTART:19700101T000000\nRRULE:FREQ=MINUTELY;WKST=MO';
+const RR_UNTIL_1960 = 'DTSTART:19600803T190600\nRRULE:FREQ=SECONDLY;UNTIL=19600803T190700;WKST=MO';
+
 var es6;
 try {
   eval('(function* () {})()');
@@ -11,11 +16,6 @@ try {
 } catch (e) {}
 
 var clock;
-
-const RR_EVERY_SECOND = 'DTSTART;TZID=America/Adak:20200803T190600;RRULE:FREQ=SECONDLY;WKST=MO';
-const RR_EVERY_MINUTE = 'DTSTART;TZID=America/Adak:20200803T190600;RRULE:FREQ=MINUTELY;WKST=MO';
-const RR_UNTIL_1960 =
-  'DTSTART;TZID=America/Adak:19600803T190600;RRULE:FREQ=SECONDLY;UNTIL=19600803T190700;WKST=MO';
 
 module.exports = {
   setUp: function(cb) {
@@ -30,14 +30,14 @@ module.exports = {
       test.done();
     },
     'Job name is optional and will be auto-generated': function(test) {
-      var job = new schedule.Job();
+      var job = new schedule.Job(function() {});
 
       test.ok(job.name);
       test.done();
     },
     'Uses unique names across auto-generated Job names': function(test) {
-      var job1 = new schedule.Job();
-      var job2 = new schedule.Job();
+      var job1 = new schedule.Job(function() {});
+      var job2 = new schedule.Job(function() {});
 
       test.notEqual(job1.name, job2.name);
       test.done();
@@ -82,7 +82,7 @@ module.exports = {
         test.ok(true);
       });
 
-      job.runOnDate(new Date(Date.now() + 3000));
+      job.schedule(new Date(Date.now() + 3000));
 
       setTimeout(function() {
         test.done();
@@ -90,28 +90,28 @@ module.exports = {
 
       clock.tick(3250);
     },
-    'Run job in generator': function(test) {
-      if (!es6) {
-        test.expect(0);
-        test.done();
-        return;
-      }
+    // 'Run job in generator': function(test) {
+    //   if (!es6) {
+    //     test.expect(0);
+    //     test.done();
+    //     return;
+    //   }
 
-      es6.jobInGenerator(test);
+    //   es6.jobInGenerator(test);
 
-      clock.tick(3250);
-    },
-    'Context is passed into generator correctly': function(test) {
-      if (!es6) {
-        test.expect(0);
-        test.done();
-        return;
-      }
+    //   clock.tick(3250);
+    // },
+    // 'Context is passed into generator correctly': function(test) {
+    //   if (!es6) {
+    //     test.expect(0);
+    //     test.done();
+    //     return;
+    //   }
 
-      es6.jobContextInGenerator(test);
+    //   es6.jobContextInGenerator(test);
 
-      clock.tick(3250);
-    },
+    //   clock.tick(3250);
+    // },
     "Won't run job if scheduled in the past": function(test) {
       test.expect(0);
 
@@ -165,26 +165,26 @@ module.exports = {
       clock.tick(3250);
     },
   },
-  '#schedule(Date, fn)': {
-    'Runs job once at some date, calls callback when done': function(test) {
-      test.expect(1);
+  // '#schedule(Date, fn)': {
+  //   'Runs job once at some date, calls callback when done': function(test) {
+  //     test.expect(1);
 
-      var job = new schedule.Job(
-        function() {},
-        function() {
-          test.ok(true);
-        }
-      );
+  //     var job = new schedule.Job(
+  //       function() {},
+  //       function() {
+  //         test.ok(true);
+  //       }
+  //     );
 
-      job.schedule(new Date(Date.now() + 3000));
+  //     job.schedule(new Date(Date.now() + 3000));
 
-      setTimeout(function() {
-        test.done();
-      }, 3250);
+  //     setTimeout(function() {
+  //       test.done();
+  //     }, 3250);
 
-      clock.tick(3250);
-    },
-  },
+  //     clock.tick(3250);
+  //   },
+  // },
   '#schedule(RecurrenceRule)': {
     'Runs job at interval based on recur rule, repeating indefinitely': function(test) {
       test.expect(3);
@@ -193,10 +193,7 @@ module.exports = {
         test.ok(true);
       });
 
-      var rule = new schedule.RecurrenceRule(RR_EVERY_SECOND);
-      // rule.second = null; // fire every second
-
-      job.schedule(rule);
+      job.schedule(RR_EVERY_SECOND);
 
       setTimeout(function() {
         job.cancel();
@@ -216,10 +213,7 @@ module.exports = {
         test.ok(true);
       });
 
-      var rule = new schedule.RecurrenceRule(RR_EVERY_SECOND);
-      // rule.second = null; // fire every second
-
-      job.schedule(rule);
+      job.schedule(RR_EVERY_SECOND);
 
       setTimeout(function() {
         job.cancel();
@@ -235,10 +229,7 @@ module.exports = {
         test.ok(false);
       });
 
-      var rule = new schedule.RecurrenceRule(RR_UNTIL_1960);
-      // rule.year = 2000;
-
-      job.schedule(rule);
+      job.schedule(RR_UNTIL_1960);
 
       setTimeout(function() {
         job.cancel();
@@ -257,7 +248,7 @@ module.exports = {
       });
 
       job.schedule({
-        second: null, // fire every second
+        freq: RRule.SECONDLY,
       });
 
       setTimeout(function() {
@@ -279,7 +270,7 @@ module.exports = {
       });
 
       job.schedule({
-        second: null, // Fire every second
+        freq: RRule.SECONDLY,
       });
 
       setTimeout(function() {
@@ -296,9 +287,7 @@ module.exports = {
         test.ok(false);
       });
 
-      job.schedule({
-        year: 2000,
-      });
+      job.schedule(new Date('1960-01-01'));
 
       setTimeout(function() {
         job.cancel();
@@ -317,7 +306,7 @@ module.exports = {
       });
 
       job.schedule({
-        second: null, // fire every second
+        freq: RRule.SECONDLY,
       });
 
       setTimeout(function() {
@@ -328,51 +317,51 @@ module.exports = {
       clock.tick(3250);
     },
   },
-  '#schedule({...}, {...})': {
-    'Runs job and run callback when job is done if callback is provided': function(test) {
-      test.expect(3);
+  // '#schedule({...}, {...})': {
+  // 'Runs job and run callback when job is done if callback is provided': function(test) {
+  //   test.expect(3);
 
-      var job = new schedule.Job(
-        function() {},
-        function() {
-          test.ok(true);
-        }
-      );
+  //   var job = new schedule.Job(
+  //     function() {},
+  //     function() {
+  //       test.ok(true);
+  //     }
+  //   );
 
-      job.schedule({
-        second: null, // fire every second
-      });
+  //   job.schedule({
+  //     second: null, // fire every second
+  //   });
 
-      setTimeout(function() {
-        job.cancel();
-        test.done();
-      }, 3250);
+  //   setTimeout(function() {
+  //     job.cancel();
+  //     test.done();
+  //   }, 3250);
 
-      clock.tick(3250);
-    },
-    'Runs job with a custom name input and run callback when job is done': function(test) {
-      test.expect(3);
+  //   clock.tick(3250);
+  // },
+  //   'Runs job with a custom name input and run callback when job is done': function(test) {
+  //     test.expect(3);
 
-      var job = new schedule.Job(
-        'MyJob',
-        function() {},
-        function() {
-          test.equal(job.name, 'MyJob');
-        }
-      );
+  //     var job = new schedule.Job(
+  //       'MyJob',
+  //       function() {},
+  //       function() {
+  //         test.equal(job.name, 'MyJob');
+  //       }
+  //     );
 
-      job.schedule({
-        second: null, // fire every second
-      });
+  //     job.schedule({
+  //       second: null, // fire every second
+  //     });
 
-      setTimeout(function() {
-        job.cancel();
-        test.done();
-      }, 3250);
+  //     setTimeout(function() {
+  //       job.cancel();
+  //       test.done();
+  //     }, 3250);
 
-      clock.tick(3250);
-    },
-  },
+  //     clock.tick(3250);
+  //   },
+  // },
   '#cancel': {
     'Prevents all future invocations': function(test) {
       test.expect(1);
@@ -382,7 +371,7 @@ module.exports = {
       });
 
       job.schedule({
-        second: null, // fire every second
+        freq: RRule.SECONDLY,
       });
 
       setTimeout(function() {
@@ -396,10 +385,10 @@ module.exports = {
       clock.tick(2250);
     },
     'Cancelled job reschedules': function(test) {
-      test.expect(1);
+      test.expect(2);
       var ok = false;
 
-      var job = schedule.scheduleJob('*/1 * * * * *', function() {});
+      var job = schedule.scheduleJob(RR_EVERY_SECOND, function(d) {});
 
       setTimeout(function() {
         job.cancel(true);
@@ -414,11 +403,49 @@ module.exports = {
 
       clock.tick(2250);
     },
-    'CancelNext job reschedules': function(test) {
+    'Cancelled job without rescheduling': function(test) {
       test.expect(1);
       var ok = false;
 
-      var job = schedule.scheduleJob('*/1 * * * * *', function() {});
+      var job = schedule.scheduleJob(RR_EVERY_SECOND, function() {});
+
+      setTimeout(function() {
+        job.cancel();
+        if (job.nextInvocation() !== null) ok = true;
+      }, 1250);
+
+      setTimeout(function() {
+        job.cancel();
+        test.ok(ok);
+        test.done();
+      }, 2250);
+
+      clock.tick(2250);
+    },
+    'CancelNext job reschedules': function(test) {
+      test.expect(2);
+      var ok = false;
+
+      var job = schedule.scheduleJob(RR_EVERY_SECOND, function(d) {});
+
+      setTimeout(function(d) {
+        job.cancelNext(true);
+        if (job.nextInvocation() !== null) ok = true;
+      }, 1250);
+
+      setTimeout(function() {
+        job.cancel();
+        test.ok(ok);
+        test.done();
+      }, 3250);
+
+      clock.tick(3250);
+    },
+    'CancelNext job with no rescheduling': function(test) {
+      test.expect(1);
+      var ok = false;
+
+      var job = schedule.scheduleJob(RR_EVERY_SECOND, function() {});
 
       setTimeout(function() {
         job.cancelNext();

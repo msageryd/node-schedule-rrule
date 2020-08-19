@@ -3,8 +3,8 @@
 var sinon = require('sinon');
 var main = require('../package.json').main;
 var schedule = require('../' + main);
-var {RRule} = require('rrule');
 var clock;
+var {RRule} = require('rrule');
 
 const RR_EVERY_SECOND = 'DTSTART:19700101T000000\nRRULE:FREQ=SECONDLY;WKST=MO';
 const RR_EVERY_MINUTE = 'DTSTART:19700101T000000\nRRULE:FREQ=MINUTELY;WKST=MO';
