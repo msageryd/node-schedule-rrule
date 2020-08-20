@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.3
+
+- Test suite from node-schedule migrated to node-schedule-rrule. All tests are passing
+
+- Job.cancelNext removed (almost same behaviour can be achieved with Job.cancel)
+
+- Support for "one-shots". i.e. schedule with just a Date object
+
+  The one-shot API will change before v1.0 so it can take a Date array, or schedule more dates for an existing job. Needed simple one-shots to complete test suite.
+
 ## 0.9.2
 
 - More input options for Job.schedule (RRule object, RRule options object, iCal string)

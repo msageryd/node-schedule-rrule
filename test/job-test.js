@@ -6,6 +6,7 @@ var schedule = require('../' + main);
 
 const {RRule} = require('rrule');
 const RR_EVERY_SECOND = 'DTSTART:19700101T000000\nRRULE:FREQ=SECONDLY;WKST=MO';
+const RR_EVERY_OTHER_SECOND = 'DTSTART:19700101T000000\nRRULE:FREQ=SECONDLY;WKST=MO;INTERVAL=2';
 const RR_EVERY_MINUTE = 'DTSTART:19700101T000000\nRRULE:FREQ=MINUTELY;WKST=MO';
 const RR_UNTIL_1960 = 'DTSTART:19600803T190600\nRRULE:FREQ=SECONDLY;UNTIL=19600803T190700;WKST=MO';
 
@@ -62,14 +63,14 @@ module.exports = {
     'Cancel next job before it runs': function(test) {
       test.expect(1);
 
-      var job = new schedule.Job(function() {
+      var job = new schedule.Job(function(d) {
         test.ok(true);
       });
 
-      job.schedule(new Date(Date.now() + 1500));
-      job.schedule(new Date(Date.now() + 3000));
-      job.cancelNext();
+      job.schedule(RR_EVERY_OTHER_SECOND);
+
       setTimeout(function() {
+        job.cancel();
         test.done();
       }, 3250);
 
@@ -90,28 +91,6 @@ module.exports = {
 
       clock.tick(3250);
     },
-    // 'Run job in generator': function(test) {
-    //   if (!es6) {
-    //     test.expect(0);
-    //     test.done();
-    //     return;
-    //   }
-
-    //   es6.jobInGenerator(test);
-
-    //   clock.tick(3250);
-    // },
-    // 'Context is passed into generator correctly': function(test) {
-    //   if (!es6) {
-    //     test.expect(0);
-    //     test.done();
-    //     return;
-    //   }
-
-    //   es6.jobContextInGenerator(test);
-
-    //   clock.tick(3250);
-    // },
     "Won't run job if scheduled in the past": function(test) {
       test.expect(0);
 
@@ -386,22 +365,28 @@ module.exports = {
     },
     'Cancelled job reschedules': function(test) {
       test.expect(2);
-      var ok = false;
+      /*
+        1. first occurrence
+        2. cancelled
+        3. first rescheduled occurrence
 
-      var job = schedule.scheduleJob(RR_EVERY_SECOND, function(d) {});
+        i.e. after 3 seconds we should see 2 occurrences
+      */
+      var ok = false;
+      var job = schedule.scheduleJob(RR_EVERY_SECOND, function(d) {
+        test.ok(true);
+      });
 
       setTimeout(function() {
         job.cancel(true);
-        if (job.nextInvocation() !== null) ok = true;
       }, 1250);
 
       setTimeout(function() {
         job.cancel();
-        test.ok(ok);
         test.done();
-      }, 2250);
+      }, 3250);
 
-      clock.tick(2250);
+      clock.tick(3250);
     },
     'Cancelled job without rescheduling': function(test) {
       test.expect(1);
@@ -411,7 +396,7 @@ module.exports = {
 
       setTimeout(function() {
         job.cancel();
-        if (job.nextInvocation() !== null) ok = true;
+        if (job.nextInvocation() === null) ok = true;
       }, 1250);
 
       setTimeout(function() {
@@ -422,44 +407,7 @@ module.exports = {
 
       clock.tick(2250);
     },
-    'CancelNext job reschedules': function(test) {
-      test.expect(2);
-      var ok = false;
 
-      var job = schedule.scheduleJob(RR_EVERY_SECOND, function(d) {});
-
-      setTimeout(function(d) {
-        job.cancelNext(true);
-        if (job.nextInvocation() !== null) ok = true;
-      }, 1250);
-
-      setTimeout(function() {
-        job.cancel();
-        test.ok(ok);
-        test.done();
-      }, 3250);
-
-      clock.tick(3250);
-    },
-    'CancelNext job with no rescheduling': function(test) {
-      test.expect(1);
-      var ok = false;
-
-      var job = schedule.scheduleJob(RR_EVERY_SECOND, function() {});
-
-      setTimeout(function() {
-        job.cancelNext();
-        if (job.nextInvocation() !== null) ok = true;
-      }, 1250);
-
-      setTimeout(function() {
-        job.cancel();
-        test.ok(ok);
-        test.done();
-      }, 2250);
-
-      clock.tick(2250);
-    },
     "Job emits 'canceled' event": function(test) {
       test.expect(1);
 
