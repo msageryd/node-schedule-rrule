@@ -17,15 +17,26 @@ The very nice core of Matt's library is kept in order to handle many scheduled j
 
 This version has no cron functionality whatsoever. Dependencies on **cron-parser** and **cron-date** is exchanged for dependency on **rrule**.
 
+Just like its' parent library, Node Schedule RRule is for time-based scheduling, not interval-based scheduling. While you can easily bend it to your will, if you only want to do something like "run this function every 5 minutes", you'll find `setInterval` much easier to use, and far more appropriate. But if you want to, say, "run this function at the :20
+and :50 of every hour on the third Tuesday of every month," you'll find that Node Schedule RRule suits your needs better.
+
 ## Why an RRule version?
 
 RRule is a neat way to store recurrence definitions for use in iCal compatible applications. If you have iCal recurrances at the client side and need to trigger actions at the server for the very same recurrences (sending reminders etc) you will probably be better of using an RRule parser at the server instead of trying to convert your iCal stuff to cron stuff. Many times this isn't even possible because rrule can describe more complicated recurrences than cron.
 
+There are a couple of rrule libraries for javascript. The one we use is currently the most used ([rrule](https://www.npmjs.com/package/rrule)). The rrule library implements most of the iCal standard, even VEvents can be constructed via RRuleSet, i.e. a set of RRule, explicit dates and exclusions of those (e.g. repeat every friday, but not on Christmas eve).
+
+## Terminology and the concept in this library
+
+When a **job** is created (either via `new Job()` or via `scheduleJob()`), this job is placed in an internal job list. Each job has a **rule** for calculating the next invocation time. In node-schedule-rrule, this rule is an RRule or RRuleSet (Can also be plain Date objects).
+
+An internal list, **pendingInvocations**, is kept populated with the next planned **invocation** for each job. When it's time for a planned invocation to be **invoked** the provided callback function for the related job will be called. The callback will be given an object consisting of the **invocationDate**, **lastInvocationDate** and an **invocationCounter**. There will also be an event emitted. The next upcoming invocation is calculated for the same job and put in the pendingInvocations list so it's ready when time comes.
+
 ## Caveats
 
-RRule is well suited for calendar occurrences which often has an occurence-count of 10:s or 100:s, whereas cron is more suited for scheduling tasks server-side where occurrence count can be hudreds of thousands. In the calendar use case we might need to look at both past and future occurrences (when the user browses the calendar). In the server use case we only need to look forward.
+RRule-calculations are a bit more involved than cron-calculations, therefore RRule is well suited for calendar occurrences which often has an occurence-count of 10:s or 100:s, whereas cron is more suited for scheduling tasks server-side where occurrence count can be hudreds of thousands. In the calendar use case we might need to look at both past and future occurrences (when the user browses the calendar). In the server use case we only need to look forward.
 
-The most called funtion in the rrule parser is `after()` which returns the next occurence after a given date. Rrule.js iterates all the way from the start date (dtstart) every time in order to calculate the next occurrence. This can be a real bottleneck for rules with a massive amount of occurences, for example where frequence is "every second".
+Even though we only need to look forward, rrule.js has to iterate all the way from the start date (dtstart) every time in order to calculate the next occurrence. This can be a real bottleneck for rules with a massive amount of occurences, for example where frequence is "every second". There is a concept of cache in rrule.js, but it doesn't seem to cover out use case. Please chime in if you know otherwise.
 
 In order to handle this bottleneck **node-schedule-rrule** pushes the start date (dtstart) of each RRule forward regularly in order to shorten the tail with occurrences we are not interested in. Altering dtstart needs to be done in a safe maner without compromising the rules, i.e. we cannot simply reset dtstart to `new Date()` without considering the rules.
 
@@ -39,59 +50,69 @@ npm install node-schedule-rrule
 
 ### Overview
 
-Just like its' parent library, Node Schedule RRule is for time-based scheduling, not interval-based scheduling. While you can easily bend it to your will, if you only want to do something like "run this function every 5 minutes", you'll find `setInterval` much easier to use, and far more appropriate. But if you want to, say, "run this function at the :20
-and :50 of every hour on the third Tuesday of every month," you'll find that Node Schedule RRule suits your needs better.
+### Scheduling jobs
 
-### Jobs and Scheduling
+To schedule a job you can either create a Job manually and call schedule on it like this.
 
-Every scheduled job in Node Schedule RRule is represented by a `Job` object. You can
-create jobs manually, then execute the `schedule()` method to apply a schedule,
-or use the convenience function `scheduleJob()` as demonstrated below.
+```js
+const schedule = require('node-schedule-rrule');
 
-`Job` objects are `EventEmitter`'s, and emit a `run` event after each execution.
-They also emit a `scheduled` event each time they're scheduled to run, and a
-`canceled` event when an invocation is canceled before it's executed (both events
-receive a JavaScript date object as a parameter). Note that jobs are scheduled the
-first time immediately, so if you create a job using the `scheduleJob()`
-convenience method, you'll miss the first `scheduled` event, but you can query the
-invocation manually (see below). Also note that `canceled` is the single-L American
-spelling.
+const job1 = new schedule.Job(
+  //An optional job name makes it easy to work with the job later on
+  'Job name',
 
-Jobs can be scheduled in any way RRule can be created, i.e.:
+  //Function to be called upon invocation
+  function(invocationData) {
+    console.log(invocationData);
+  }
+);
 
-- with an iCal RFC compliant rrule string
-- with an RRule object literal
-- with a precreated RRule or RRuleSet
+job1.schedule('FREQ=SECONDLY');
+```
 
-RRule library: https://github.com/jakubroztocil/rrule
+You can also use the convenience function `scheduleJob`
+
+```js
+const {scheduleJob} = require('node-schedule-rrule');
+
+const job1 = scheduleJob('Job name', 'FREQ=SECONDLY', function(invocationData) {
+  console.log(invocationData);
+});
+```
+
+The rule input for a job can be one of the following:
+
+- an iCal RFC compliant rrule string
+- an RRule object literal
+- a precreated RRule or RRuleSet
+- A Date object or an aray of Date objects (this has nothing to do with RRule, but is provided as a convenience)
 
 ### iCal RFC string
 
-Easily create iCal strings with the rrule demo app: http://jakubroztocil.github.io/rrule/
+You can easily generate iCal strings with the rrule demo app: http://jakubroztocil.github.io/rrule/
 
 N.B: if the demo app gives you a multiline iCal string you need to insert a newline char in the string, i.e. `\n`
 
 Example:
 
 ```js
-const schedule = require('node-schedule-rrule');
+const {schedulejob} = require('node-schedule-rrule');
 
-const j = schedule.scheduleJob(
-  'DTSTART:20200815T092630\nRRULE:FREQ=SECONDLY;INTERVAL=1;WKST=MO;BYSECOND=30',
-  function() {
-    console.log('This will be logged every half minute, when the second hand is at 30');
-  }
-);
+scheduleJob('DTSTART:20200815T092630\nRRULE:FREQ=SECONDLY;INTERVAL=1;WKST=MO;BYSECOND=30', function(
+  invocationData
+) {
+  console.log('This will be logged every half minute, when the second hand is at 30');
+});
 ```
 
 RRule also supports the BYSETPOS attribute, which makes it possible to schedule tasks for the last workday every month.
 
 ```js
-const schedule = require('node-schedule-rrule');
+const {schedulejob} = require('node-schedule-rrule');
 
-const j = schedule.scheduleJob(
+const j = scheduleJob(
   'DTSTART:20200901T090000Z\nRRULE:FREQ=MONTHLY;INTERVAL=1;WKST=MO;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1',
-  function() {
+  function(invocationData) {
     console.log('This will be logged the last workday every month');
   }
 );
@@ -159,7 +180,7 @@ Licensed under the **[MIT License][license]**.
 
 ## Repo
 
-Instead of just copying the original code and start over I've left this repo as a fork in order to keep the credits where credits are due. That said, I have cleaned up the repo somewhat by removing old branches and tags.
+Instead of just copying the original code and start over I've left this repo as a fork in order to keep the credits where credits are due. That said, I have cleaned up the repo somewhat by removing old branches and tags. From now on I intend to create a git tag for every published NPM version.
 
 ## Links
 
@@ -168,3 +189,5 @@ Instead of just copying the original code and start over I've left this repo as 
 [RRule](https://github.com/jakubroztocil/rrule)
 
 [RRule demo](http://jakubroztocil.github.io/rrule/)
+
+[iCalendar.org](https://icalendar.org/iCalendar-RFC-5545/3-3-10-recurrence-rule.html)
