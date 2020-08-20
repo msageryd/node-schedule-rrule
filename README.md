@@ -1,6 +1,6 @@
 # WORK IN PROGRESS
 
-**Do not use this library yet. It's functional, but alot remains until it's production ready.**
+**Do not use this library yet. It's functional, but a lot remains until it's production ready.**
 
 - [x] Update test suite to comply with RRule instead of cron
 - [x] Update the documentation
