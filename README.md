@@ -189,7 +189,7 @@ Licensed under the **[MIT License][license]**.
 
 As of 2020-08-20 this repo is detatched from the formerly forked repo [node-schedule](https://github.com/node-schedule/node-schedule). It didn't make sense to have a fork when there will never be an opportunity to use code from downstream nor upstream, the code is too different.
 
-The git history is preserved in order to keep credits where credits are due. That siad, I have removed all tags and bransches from the original git history. From now on I intend to create a git tag for every published NPM version.
+The git history is preserved in order to keep credits where credits are due. That said, I have removed all tags and bransches from the original git history. From now on I intend to create a git tag for every published NPM version.
 
 ## Links
 
