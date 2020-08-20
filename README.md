@@ -36,7 +36,7 @@ An internal list, **pendingInvocations**, is kept populated with the next planne
 
 RRule-calculations are a bit more involved than cron-calculations, therefore RRule is well suited for calendar occurrences which often has an occurence-count of 10:s or 100:s, whereas cron is more suited for scheduling tasks server-side where occurrence count can be hudreds of thousands. In the calendar use case we might need to look at both past and future occurrences (when the user browses the calendar). In the server use case we only need to look forward.
 
-Even though we only need to look forward, rrule.js has to iterate all the way from the start date (dtstart) every time in order to calculate the next occurrence. This can be a real bottleneck for rules with a massive amount of occurences, for example where frequence is "every second". There is a concept of cache in rrule.js, but it doesn't seem to cover out use case. Please chime in if you know otherwise.
+Even though we only need to look forward, rrule.js has to iterate all the way from the start date (dtstart) every time in order to calculate the next occurrence. This can be a real bottleneck for rules with a massive amount of occurences, for example where frequence is "every second". There is a concept of cache in rrule.js, but it doesn't seem to cover our use case. Please chime in if you know otherwise.
 
 In order to handle this bottleneck **node-schedule-rrule** pushes the start date (dtstart) of each RRule forward regularly in order to shorten the tail with occurrences we are not interested in. Altering dtstart needs to be done in a safe maner without compromising the rules, i.e. we cannot simply reset dtstart to `new Date()` without considering the rules.
 
@@ -55,9 +55,9 @@ npm install node-schedule-rrule
 To schedule a job you can either create a Job manually and call schedule on it like this.
 
 ```js
-const schedule = require('node-schedule-rrule');
+const {Job} = require('node-schedule-rrule');
 
-const job1 = new schedule.Job(
+const job1 = new Job(
   //An optional job name makes it easy to work with the job later on
   'Job name',
 
@@ -123,7 +123,7 @@ const j = scheduleJob(
 You'll need to install the rrule library if you want to use the RRule constants.
 
 ```js
-const schedule = require('node-schedule-rrule');
+const {scheduleJob} = require('node-schedule-rrule');
 const {RRule} = require('rrule');
 
 const options = {
@@ -134,7 +134,7 @@ const options = {
   bysetpos: [-1],
 };
 
-const j = schedule.scheduleJob(options, function() {
+const j = scheduleJob(options, function() {
   console.log('This will be logged the last workday every month');
 });
 ```
