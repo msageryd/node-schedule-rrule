@@ -3,17 +3,30 @@
 var sinon = require('sinon');
 var main = require('../package.json').main;
 var schedule = require('../' + main);
-
+const {RRule, rrulestr} = require('rrule');
 var clock;
 
-const RR_EVERY_SECOND = 'DTSTART;TZID=America/Adak:20200803T190600\nRRULE:FREQ=SECONDLY;WKST=MO';
-const RR_EVERY_MINUTE = 'DTSTART;TZID=America/Adak:20200803T190600\nRRULE:FREQ=MINUTELY;WKST=MO';
-const RR_UNTIL_1960 =
-  'DTSTART;TZID=America/Adak:19600803T190600\nRRULE:FREQ=SECONDLY;UNTIL=19600803T190700;WKST=MO';
+var base = new Date(Date.UTC(2010, 3, 29, 12, 30, 15, 0));
+var baseMs = base.getTime();
+
+//Helper function to build iCal date strings from current time with an offset
+function parseDate(offsetMs) {
+  const now = new Date();
+  const date = new Date(now.getTime() + offsetMs);
+
+  const year = date.getUTCFullYear();
+  const month = ('' + (date.getUTCMonth() + 1)).padStart(2, '0');
+  const day = ('' + date.getUTCDate()).padStart(2, '0');
+  const hour = ('' + date.getUTCHours()).padStart(2, '0');
+  const minute = ('' + date.getUTCMinutes()).padStart(2, '0');
+  const second = ('' + date.getUTCSeconds()).padStart(2, '0');
+
+  return `${year}${month}${day}T${hour}${minute}${second}Z`;
+}
 
 module.exports = {
   setUp: function(cb) {
-    clock = sinon.useFakeTimers();
+    clock = sinon.useFakeTimers(baseMs);
     cb();
   },
   RecurrenceRule: {
@@ -24,12 +37,9 @@ module.exports = {
         test.ok(true);
       });
 
-      var rule = new schedule.RecurrenceRule(RR_EVERY_SECOND);
-      // rule.second = null; // every second
-
       job.schedule({
-        start: new Date(Date.now() - 2000),
-        rule: rule,
+        freq: RRule.SECONDLY,
+        dtstart: new Date(Date.now() - 2000),
       });
 
       setTimeout(function() {
@@ -46,12 +56,9 @@ module.exports = {
         test.ok(true);
       });
 
-      var rule = new schedule.RecurrenceRule(RR_EVERY_SECOND);
-      // rule.second = null; // every second
-
       job.schedule({
-        start: new Date(Date.now() + 2000),
-        rule: rule,
+        freq: RRule.SECONDLY,
+        dtstart: new Date(Date.now() + 2000),
       });
 
       setTimeout(function() {
@@ -68,12 +75,9 @@ module.exports = {
         test.ok(true);
       });
 
-      var rule = new schedule.RecurrenceRule(RR_EVERY_SECOND);
-      // rule.second = null; // every second
-
       job.schedule({
-        end: new Date(Date.now() - 2000),
-        rule: rule,
+        freq: RRule.SECONDLY,
+        until: new Date(Date.now() - 2000),
       });
 
       setTimeout(function() {
@@ -90,12 +94,9 @@ module.exports = {
         test.ok(true);
       });
 
-      var rule = new schedule.RecurrenceRule(RR_EVERY_SECOND);
-      // rule.second = null; // every second
-
       job.schedule({
-        end: new Date(Date.now() + 2000),
-        rule: rule,
+        freq: RRule.SECONDLY,
+        until: new Date(Date.now() + 2000),
       });
 
       setTimeout(function() {
@@ -112,13 +113,10 @@ module.exports = {
         test.ok(true);
       });
 
-      var rule = new schedule.RecurrenceRule(RR_EVERY_SECOND);
-      // rule.second = null; // every second
-
       job.schedule({
-        start: new Date(Date.now() + 1000),
-        end: new Date(Date.now() + 2000),
-        rule: rule,
+        freq: RRule.SECONDLY,
+        dtstart: new Date(Date.now() + 1000),
+        until: new Date(Date.now() + 2000),
       });
 
       setTimeout(function() {
@@ -129,7 +127,8 @@ module.exports = {
       clock.tick(3250);
     },
   },
-  'Object Literal': {
+
+  'iCal-string': {
     'no endTime , startTime less than now': function(test) {
       test.expect(3);
 
@@ -137,10 +136,8 @@ module.exports = {
         test.ok(true);
       });
 
-      job.schedule({
-        start: new Date(Date.now() - 2000),
-        rule: {second: null},
-      });
+      const start = parseDate(-2000);
+      job.schedule(`DTSTART:${start}\nRRULE:FREQ=SECONDLY`);
 
       setTimeout(function() {
         job.cancel();
@@ -156,10 +153,8 @@ module.exports = {
         test.ok(true);
       });
 
-      job.schedule({
-        start: new Date(Date.now() + 2000),
-        rule: {second: null},
-      });
+      const start = parseDate(+2000);
+      job.schedule(`DTSTART:${start}\nRRULE:FREQ=SECONDLY`);
 
       setTimeout(function() {
         job.cancel();
@@ -175,10 +170,8 @@ module.exports = {
         test.ok(true);
       });
 
-      job.schedule({
-        end: new Date(Date.now() - 2000),
-        rule: {second: null},
-      });
+      const end = parseDate(-2000);
+      job.schedule(`RRULE:UNTIL=${end};FREQ=SECONDLY`);
 
       setTimeout(function() {
         job.cancel();
@@ -194,10 +187,8 @@ module.exports = {
         test.ok(true);
       });
 
-      job.schedule({
-        end: new Date(Date.now() + 2000),
-        rule: {second: null},
-      });
+      const end = parseDate(+2000);
+      job.schedule(`RRULE:UNTIL=${end};FREQ=SECONDLY`);
 
       setTimeout(function() {
         job.cancel();
@@ -213,109 +204,9 @@ module.exports = {
         test.ok(true);
       });
 
-      job.schedule({
-        start: new Date(Date.now() + 1000),
-        end: new Date(Date.now() + 2000),
-        rule: {second: null},
-      });
-
-      setTimeout(function() {
-        job.cancel();
-        test.done();
-      }, 3250);
-
-      clock.tick(3250);
-    },
-  },
-  'cron-style': {
-    'no endTime , startTime less than now': function(test) {
-      test.expect(3);
-
-      var job = new schedule.Job(function() {
-        test.ok(true);
-      });
-
-      job.schedule({
-        start: new Date(Date.now() - 2000),
-        rule: '*/1 * * * * *',
-      });
-
-      setTimeout(function() {
-        job.cancel();
-        test.done();
-      }, 3250);
-
-      clock.tick(3250);
-    },
-    'no endTime , startTime greater than now': function(test) {
-      test.expect(1);
-
-      var job = new schedule.Job(function() {
-        test.ok(true);
-      });
-
-      job.schedule({
-        start: new Date(Date.now() + 2000),
-        rule: '*/1 * * * * *',
-      });
-
-      setTimeout(function() {
-        job.cancel();
-        test.done();
-      }, 3250);
-
-      clock.tick(3250);
-    },
-    'no startTime , endTime less than now': function(test) {
-      test.expect(0);
-
-      var job = new schedule.Job(function() {
-        test.ok(true);
-      });
-
-      job.schedule({
-        end: new Date(Date.now() - 2000),
-        rule: '*/1 * * * * *',
-      });
-
-      setTimeout(function() {
-        job.cancel();
-        test.done();
-      }, 3250);
-
-      clock.tick(3250);
-    },
-    'no startTime , endTime greater than now': function(test) {
-      test.expect(2);
-
-      var job = new schedule.Job(function() {
-        test.ok(true);
-      });
-
-      job.schedule({
-        end: new Date(Date.now() + 2000),
-        rule: '*/1 * * * * *',
-      });
-
-      setTimeout(function() {
-        job.cancel();
-        test.done();
-      }, 3250);
-
-      clock.tick(3250);
-    },
-    'has startTime and endTime': function(test) {
-      test.expect(1);
-
-      var job = new schedule.Job(function() {
-        test.ok(true);
-      });
-
-      job.schedule({
-        start: new Date(Date.now() + 1000),
-        end: new Date(Date.now() + 2000),
-        rule: '*/1 * * * * *',
-      });
+      const start = parseDate(+1000);
+      const end = parseDate(+2000);
+      job.schedule(`DTSTART:${start}\nRRULE:UNTIL=${end};FREQ=SECONDLY`);
 
       setTimeout(function() {
         job.cancel();
