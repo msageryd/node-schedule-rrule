@@ -30,7 +30,7 @@ There are a couple of rrule libraries for javascript. The one we use is currentl
 
 When a **job** is created (either via `new Job()` or via `scheduleJob()`), this job is placed in an internal job list. Each job has a **rule** for calculating the next invocation time. In node-schedule-rrule, this rule is an RRule or RRuleSet (Can also be plain Date objects).
 
-An internal list, **pendingInvocations**, is kept populated with the next planned **invocation** for each job. When it's time for a planned invocation to be **invoked** the provided callback function for the related job will be called. The callback will be given an object consisting of the **invocationDate**, **lastInvocationDate** and an **invocationCounter**. There will also be an event emitted. The next upcoming invocation is calculated for the same job and put in the pendingInvocations list so it's ready when time comes.
+An internal list, **pendingInvocations**, is kept populated with the next planned **invocation** for each job. When it's time for a planned invocation to be **invoked** the provided callback function for the related job will be called. The callback will be given an object consisting of the **jobName**, **invocationDate**, **prevInvocationDate** and an **invocationCounter**. There will also be an event emitted. The next upcoming invocation is calculated for the same job and put in the pendingInvocations list so it's ready when time comes.
 
 ## Caveats
 
@@ -180,7 +180,7 @@ Licensed under the **[MIT License][license]**.
 
 ## Repo
 
-Instead of just copying the original code and start over I've left this repo as a fork in order to keep the credits where credits are due. That said, I have cleaned up the repo somewhat by removing old branches and tags. From now on I intend to create a git tag for every published NPM version.
+Instead of just copying the original code and start over I've left this repo as a fork in order to keep the credits where credits are due. That said, I have cleaned up the repo somewhat by removing old branches and tags. I also tried to make the code more readable by refactoring and some code changes. From now on I intend to create a git tag for every published NPM version.
 
 ## Links
 
