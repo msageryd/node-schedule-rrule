@@ -2,7 +2,7 @@
 
 **Do not use this library yet. It's functional, but alot remains until it's production ready.**
 
-- [ ] Update test suite to comply with RRule instead of cron
+- [x] Update test suite to comply with RRule instead of cron
 - [x] Update the documentation
 - [x] Schedule jobs via object literal and RRule/RRuleSet
 - [ ] Support for RRuleSet
