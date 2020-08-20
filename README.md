@@ -155,11 +155,18 @@ j.cancel();
 All planned invocations will be canceled. When you set the parameter **_reschedule_**
 to true then the Job is newly scheduled afterwards.
 
-#### job.cancelNext(reschedule)
+N.B. rescheduling will be calculated based on the date of the should-have-come-next occurrence, i.e. the one you just cancelled.
 
-This method invalidates the next planned invocation or the job.
-When you set the parameter **_reschedule_** to true then the Job is newly scheduled
-afterwards.
+Example of a job which recurrs every second
+
+| second | event                                                      |
+| ------ | ---------------------------------------------------------- |
+| 1      | first occurrence                                           |
+| 1.25   | Job.cancel(true), i.e cancel with rescheduling             |
+| 1.25   | Job reschedules based on the next (cancelled) occurrence   |
+| 2      | Nothing.. This occurrence was pending and is now cancelled |
+| 3      | rescheduled occurrence triggers                            |
+| 4      | ... and so on                                              |
 
 #### job.reschedule(spec)
 
