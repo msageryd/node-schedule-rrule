@@ -157,16 +157,16 @@ to true then the Job is newly scheduled afterwards.
 
 N.B. rescheduling will be calculated based on the date of the should-have-come-next occurrence, i.e. the one you just cancelled.
 
-Example of a job which recurrs every second
+Example of a job which recurs every second
 
-| second | event                                                      |
-| ------ | ---------------------------------------------------------- |
-| 1      | first occurrence                                           |
-| 1.25   | Job.cancel(true), i.e cancel with rescheduling             |
-| 1.25   | Job reschedules based on the next (cancelled) occurrence   |
-| 2      | Nothing.. This occurrence was pending and is now cancelled |
-| 3      | rescheduled occurrence triggers                            |
-| 4      | ... and so on                                              |
+| second | event                                                      | invocation |
+| ------ | ---------------------------------------------------------- | ---------- |
+| 1      | first occurrence                                           | X          |
+| 1.25   | Job.cancel(true), i.e cancel with rescheduling             |            |
+| 1.25   | Job reschedules based on the next (cancelled) occurrence   |            |
+| 2      | Nothing.. This occurrence was pending and is now cancelled |            |
+| 3      | rescheduled occurrence triggers                            | X          |
+| 4      | ... and so on                                              | X          |
 
 #### job.reschedule(spec)
 
