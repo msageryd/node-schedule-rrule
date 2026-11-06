@@ -1,0 +1,40 @@
+{
+  "languages": {
+    "JavaScript": {
+      "formatter": { "language_server": { "name": "biome" } },
+      "language_servers": ["biome", "vtsls", "!eslint"]
+    },
+    "TypeScript": {
+      "formatter": { "language_server": { "name": "biome" } },
+      "language_servers": [
+        "biome",
+        "vtsls",
+        "!eslint",
+        "!typescript-language-server"
+      ]
+    },
+    "JSON": {
+      "formatter": { "language_server": { "name": "biome" } },
+      "language_servers": [
+        "biome",
+        "vtsls",
+        "package-version-server",
+        "!eslint",
+        "!typescript-language-server"
+      ]
+    },
+    "JSONC": {
+      "formatter": { "language_server": { "name": "biome" } },
+      "language_servers": ["biome"]
+    },
+    "TSX": {
+      "formatter": { "language_server": { "name": "biome" } },
+      "language_servers": [
+        "biome",
+        "vtsls",
+        "!eslint",
+        "!typescript-language-server"
+      ]
+    }
+  }
+}
